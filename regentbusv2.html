@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天鑽穿梭巴士</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        #datetime-info {
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        .time-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2980b9;
+            margin: 5px 0;
+        }
+        .holiday-text {
+            font-size: 14px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #btn-from {
+            background-color: #3498db;
+            color: white;
+        }
+        #btn-from:hover, #btn-from.active {
+            background-color: #2980b9;
+        }
+        #btn-back {
+            background-color: #2ecc71;
+            color: white;
+        }
+        #btn-back:hover, #btn-back.active {
+            background-color: #27ae60;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #eee;
+            padding: 12px;
+            text-align: center;
+            font-size: 15px;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        tr:nth-child(2) td {
+            color: #7f8c8d; /* Last bus color */
+        }
+        tr:nth-child(3) td {
+            font-weight: bold;
+            color: #d35400; /* Next bus 1 color */
+            font-size: 17px;
+        }
+        tr:nth-child(4) td {
+            color: #2c3e50; /* Next bus 2 color */
+        }
+        .empty-cell {
+            color: #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>天鑽穿梭巴士</h1>
+    <div id="datetime-info">
+        <div id="date-display">加載中...</div>
+        <div id="time-display" class="time-text"></div>
+        <div id="holiday-display" class="holiday-text"></div>
+    </div>
+
+    <div class="btn-group">
+        <button id="btn-from" onclick="showTable('from')">天鑽出發</button>
+        <button id="btn-back" onclick="showTable('back')">南運路回程</button>
+    </div>
+
+    <div id="table-container"></div>
+
+    <script>
+        // #1 Data structure requirements
+		const weekday_from_a = [
+			["6:30","normal"],
+			["6:40","normal"],
+			["6:50","normal"],
+			["7:00","normal"],
+			["7:05","normal"],
+			["7:10","normal"],
+			["7:20","normal"],
+			["7:25","normal"],
+			["7:30","normal"],
+			["7:40","normal"],
+			["7:45","normal"],
+			["7:50","normal"],
+			["8:00","normal"],
+			["8:05","normal"],
+			["8:10","normal"],
+			["8:20","normal"],
+			["8:25","normal"],
+			["8:30","normal"],
+			["8:40","normal"],
+			["8:45","normal"],
+			["8:50","normal"],
+			["9:00","normal"],
+			["9:10","star"],
+			["9:20","star"],
+			["9:27","special"],
+			["9:40","star"],
+			["9:55","star"],
+			["10:10","star"],
+			["10:25","star"],
+			["10:37","special"],
+			["10:55","star"],
+			["11:08","special"],
+			["11:25","star"],
+			["11:40","star"],
+			["11:55","star"],
+			["12:10","star"],
+			["12:22","special"],
+			["12:40","star"],
+			["12:52","special"],
+			["13:10","star"],
+			["13:25","star"],
+			["13:40","star"],
+			["13:55","star"],
+			["14:10","star"],
+			["14:25","star"],
+			["14:40","star"],
+			["14:55","star"],
+			["15:05","star"],
+			["15:15","star"],
+			["15:25","star"],
+			["15:35","star"],
+			["15:45","star"],
+			["15:55","star"],
+			["16:05","star"],
+			["16:15","star"],
+			["16:25","star"],
+			["16:35","star"],
+			["16:45","star"],
+			["16:55","star"],
+			["17:05","star"],
+			["17:15","star"],
+			["17:30","star"],
+			["17:45","star"],
+			["18:00","normal"],
+			["18:05","normal"],
+			["18:10","special"],
+			["18:20","normal"],
+			["18:30","normal"],
+			["18:30","special"],
+			["18:40","normal"],
+			["18:50","normal"],
+			["18:55","special"],
+			["19:00","normal"],
+			["19:10","normal"],
+			["19:20","normal"],
+			["19:20","special"],
+			["19:30","normal"],
+			["19:40","normal"],
+			["19:45","special"],
+			["19:50","normal"],
+			["20:00","normal"],
+			["20:05","star"],
+			["20:20","star"],
+			["20:35","star"],
+			["20:50","star"],
+			["21:05","star"],
+			["21:20","star"],
+			["21:35","star"],
+			["21:50","star"],
+			["22:05","star"],
+			["22:20","star"],
+			["22:30","star"],
+			["22:40","star"],
+			["22:50","star"],
+			["23:00","star"]
+		];
+
+		const weekday_back_a = [
+			["6:37","normal"],
+			["6:47","normal"],
+			["6:57","normal"],
+			["7:07","normal"],
+			["7:12","normal"],
+			["7:17","normal"],
+			["7:27","normal"],
+			["7:32","normal"],
+			["7:37","normal"],
+			["7:47","normal"],
+			["7:52","normal"],
+			["7:57","normal"],
+			["8:07","normal"],
+			["8:12","normal"],
+			["8:17","normal"],
+			["8:27","normal"],
+			["8:32","normal"],
+			["8:37","normal"],
+			["8:47","normal"],
+			["8:52","normal"],
+			["8:57","normal"],
+			["9:07","normal"],
+			["9:17","star"],
+			["9:27","star"],
+			["9:47","star"],
+			["10:02","star"],
+			["10:17","star"],
+			["10:32","star"],
+			["11:02","star"],
+			["11:32","star"],
+			["11:47","star"],
+			["12:02","star"],
+			["12:17","star"],
+			["12:47","star"],
+			["13:17","star"],
+			["13:32","star"],
+			["13:47","star"],
+			["14:02","star"],
+			["14:17","star"],
+			["14:32","star"],
+			["14:47","star"],
+			["15:02","star"],
+			["15:12","star"],
+			["15:22","star"],
+			["15:32","star"],
+			["15:42","star"],
+			["15:52","star"],
+			["16:02","star"],
+			["16:12","star"],
+			["16:22","star"],
+			["16:32","star"],
+			["16:42","star"],
+			["16:52","star"],
+			["17:02","star"],
+			["17:12","star"],
+			["17:22","star"],
+			["17:37","star"],
+			["17:52","star"],
+			["18:07","normal"],
+			["18:12","normal"],
+			["18:17","special"],
+			["18:27","normal"],
+			["18:37","normal"],
+			["18:37","special"],
+			["18:47","normal"],
+			["18:57","normal"],
+			["19:02","special"],
+			["19:07","normal"],
+			["19:17","normal"],
+			["19:27","normal"],
+			["19:27","special"],
+			["19:37","normal"],
+			["19:47","normal"],
+			["19:52","special"],
+			["19:57","normal"],
+			["20:07","normal"],
+			["20:12","star"],
+			["20:27","star"],
+			["20:42","star"],
+			["20:57","star"],
+			["21:12","star"],
+			["21:27","star"],
+			["21:42","star"],
+			["21:57","star"],
+			["22:12","star"],
+			["22:27","star"],
+			["22:37","star"],
+			["22:47","star"],
+			["22:57","star"],
+			["23:07","star"]
+		];
+
+		const weekday_from_b = [
+			["6:30","normal"],
+			["6:35","special"],
+			["6:45","normal"],
+			["6:55","normal"],
+			["6:55","special"],
+			["7:05","special"],
+			["7:10","normal"],
+			["7:15","normal"],
+			["7:20","normal"],
+			["7:20","special"],
+			["7:30","special"],
+			["7:35","normal"],
+			["7:40","normal"],
+			["7:45","normal"],
+			["7:50","special"],
+			["7:55","special"],
+			["8:00","normal"],
+			["8:05","normal"],
+			["8:10","normal"],
+			["8:20","special"],
+			["8:25","normal"],
+			["8:30","normal"],
+			["8:35","normal"],
+			["8:45","special"],
+			["8:50","normal"],
+			["8:55","normal"],
+			["9:05","star"],
+			["9:15","star"],
+			["9:25","star"],
+			["9:35","star"],
+			["9:45","star"],
+			["9:55","star"],
+			["10:05","star"],
+			["10:20","star"],
+			["10:35","star"],
+			["10:50","star"],
+			["11:05","star"],
+			["11:20","star"],
+			["11:35","star"],
+			["11:50","star"],
+			["12:05","star"],
+			["12:20","star"],
+			["12:35","star"],
+			["12:50","star"],
+			["13:05","star"],
+			["13:20","star"],
+			["13:30","star"],
+			["13:40","star"],
+			["13:50","star"],
+			["14:00","star"],
+			["14:10","star"],
+			["14:20","star"],
+			["14:30","star"],
+			["14:40","star"],
+			["14:50","star"],
+			["15:00","star"],
+			["15:10","star"],
+			["15:20","star"],
+			["15:30","star"],
+			["15:40","star"],
+			["15:50","star"],
+			["16:00","star"],
+			["16:10","star"],
+			["16:20","star"],
+			["16:30","star"],
+			["16:40","star"],
+			["16:55","star"],
+			["17:10","star"],
+			["17:20","star"],
+			["17:35","star"],
+			["17:45","star"],
+			["18:00","normal"],
+			["18:10","normal"],
+			["18:20","normal"],
+			["18:25","normal"],
+			["18:35","normal"],
+			["18:45","normal"],
+			["18:50","normal"],
+			["19:00","normal"],
+			["19:10","normal"],
+			["19:15","normal"],
+			["19:25","normal"],
+			["19:35","normal"],
+			["19:40","normal"],
+			["19:50","normal"],
+			["20:05","star"],
+			["20:15","star"],
+			["20:30","star"],
+			["20:40","star"],
+			["20:55","star"],
+			["21:05","star"],
+			["21:20","star"],
+			["21:30","star"],
+			["21:45","star"],
+			["21:55","star"],
+			["22:10","star"],
+			["22:20","star"],
+			["22:30","star"],
+			["22:40","star"],
+			["22:50","star"],
+			["23:05","star"],
+			["23:15","star"]
+		];
+
+		const weekday_back_b = [
+			["6:40","normal"],
+			["6:45","special"],
+			["7:00","normal"],
+			["7:10","normal"],
+			["7:15","special"],
+			["7:20","normal"],
+			["7:25","normal"],
+			["7:30","normal"],
+			["7:40","special"],
+			["7:45","normal"],
+			["7:50","normal"],
+			["7:55","normal"],
+			["8:05","special"],
+			["8:10","normal"],
+			["8:15","normal"],
+			["8:20","normal"],
+			["8:30","special"],
+			["8:35","normal"],
+			["8:40","normal"],
+			["8:45","normal"],
+			["9:00","normal"],
+			["9:05","normal"],
+			["9:15","star"],
+			["9:25","star"],
+			["9:35","star"],
+			["9:45","star"],
+			["9:55","star"],
+			["10:05","star"],
+			["10:15","star"],
+			["10:30","star"],
+			["10:45","star"],
+			["11:00","star"],
+			["11:15","star"],
+			["11:30","star"],
+			["11:45","star"],
+			["12:00","star"],
+			["12:15","star"],
+			["12:30","star"],
+			["12:45","star"],
+			["13:00","star"],
+			["13:15","star"],
+			["13:30","star"],
+			["13:40","star"],
+			["13:50","star"],
+			["14:00","star"],
+			["14:10","star"],
+			["14:20","star"],
+			["14:30","star"],
+			["14:40","star"],
+			["14:50","star"],
+			["15:00","star"],
+			["15:10","star"],
+			["15:20","star"],
+			["15:30","star"],
+			["15:40","star"],
+			["15:50","star"],
+			["16:00","star"],
+			["16:10","star"],
+			["16:20","star"],
+			["16:30","star"],
+			["16:40","star"],
+			["16:50","star"],
+			["17:05","star"],
+			["17:20","star"],
+			["17:30","star"],
+			["17:45","star"],
+			["17:55","star"],
+			["18:10","normal"],
+			["18:20","normal"],
+			["18:30","normal"],
+			["18:35","normal"],
+			["18:45","normal"],
+			["18:55","normal"],
+			["19:00","normal"],
+			["19:10","normal"],
+			["19:20","normal"],
+			["19:25","normal"],
+			["19:35","normal"],
+			["19:45","normal"],
+			["19:50","normal"],
+			["20:00","normal"],
+			["20:15","star"],
+			["20:25","star"],
+			["20:40","star"],
+			["20:50","star"],
+			["21:05","star"],
+			["21:15","star"],
+			["21:30","star"],
+			["21:40","star"],
+			["21:55","star"],
+			["22:05","star"],
+			["22:20","star"],
+			["22:30","star"],
+			["22:40","star"],
+			["22:50","star"],
+			["23:00","star"],
+			["23:15","star"],
+			["23:30","star"]
+		];
+
+		const weekday_from_c = [
+			["9:15"],
+			["10:15"],
+			["11:15"],
+			["12:15"],
+			["13:15"],
+			["14:15"],
+			["15:15"],
+			["16:15"],
+			["17:15"],
+			["20:15"],
+			["21:15"],
+			["22:15"]
+		];
+
+		const weekend_from_a = [
+			["6:30","star"],
+			["6:45","star"],
+			["7:00","star"],
+			["7:15","star"],
+			["7:30","star"],
+			["7:45","star"],
+			["8:00","star"],
+			["8:15","star"],
+			["8:30","star"],
+			["8:45","star"],
+			["9:00","star"],
+			["9:10","star"],
+			["9:20","star"],
+			["9:30","star"],
+			["9:40","star"],
+			["9:55","star"],
+			["10:10","star"],
+			["10:25","star"],
+			["10:40","star"],
+			["10:55","star"],
+			["11:10","star"],
+			["11:25","star"],
+			["11:40","star"],
+			["11:55","star"],
+			["12:05","normal"],
+			["12:10","normal"],
+			["12:15","normal"],
+			["12:25","normal"],
+			["12:30","normal"],
+			["12:35","normal"],
+			["12:45","normal"],
+			["12:50","normal"],
+			["12:55","normal"],
+			["13:05","normal"],
+			["13:10","normal"],
+			["13:15","normal"],
+			["13:25","normal"],
+			["13:30","normal"],
+			["13:35","normal"],
+			["13:45","normal"],
+			["13:50","normal"],
+			["13:55","normal"],
+			["14:05","normal"],
+			["14:10","normal"],
+			["14:15","normal"],
+			["14:25","normal"],
+			["14:40","star"],
+			["14:55","star"],
+			["15:10","star"],
+			["15:25","star"],
+			["15:40","star"],
+			["15:55","star"],
+			["16:15","star"],
+			["16:30","star"],
+			["16:45","star"],
+			["17:00","normal"],
+			["17:10","normal"],
+			["17:20","normal"],
+			["17:30","normal"],
+			["17:40","normal"],
+			["17:50","normal"],
+			["18:00","normal"],
+			["18:10","normal"],
+			["18:20","normal"],
+			["18:30","normal"],
+			["18:40","normal"],
+			["18:50","normal"],
+			["19:05","star"],
+			["19:25","star"],
+			["19:35","star"],
+			["19:45","star"],
+			["20:00","star"],
+			["20:15","star"],
+			["20:30","star"],
+			["20:45","star"],
+			["21:00","star"],
+			["21:15","star"],
+			["21:30","star"],
+			["21:45","star"],
+			["22:00","star"],
+			["22:15","star"],
+			["22:30","star"],
+			["22:45","star"],
+			["23:00","star"]
+		];
+
+		const weekend_back_a = [
+			["6:37","star"],
+			["6:52","star"],
+			["7:07","star"],
+			["7:22","star"],
+			["7:37","star"],
+			["7:52","star"],
+			["8:07","star"],
+			["8:22","star"],
+			["8:37","star"],
+			["8:52","star"],
+			["9:07","star"],
+			["9:17","star"],
+			["9:27","star"],
+			["9:37","star"],
+			["9:47","star"],
+			["10:02","star"],
+			["10:17","star"],
+			["10:32","star"],
+			["10:47","star"],
+			["11:02","star"],
+			["11:17","star"],
+			["11:32","star"],
+			["11:47","star"],
+			["12:02","star"],
+			["12:12","normal"],
+			["12:17","normal"],
+			["12:22","normal"],
+			["12:32","normal"],
+			["12:37","normal"],
+			["12:42","normal"],
+			["12:52","normal"],
+			["12:57","normal"],
+			["13:02","normal"],
+			["13:12","normal"],
+			["13:17","normal"],
+			["13:22","normal"],
+			["13:32","normal"],
+			["13:37","normal"],
+			["13:42","normal"],
+			["13:52","normal"],
+			["13:57","normal"],
+			["14:02","normal"],
+			["14:12","normal"],
+			["14:17","normal"],
+			["14:22","normal"],
+			["14:32","normal"],
+			["14:47","star"],
+			["15:02","star"],
+			["15:17","star"],
+			["15:32","star"],
+			["15:47","star"],
+			["16:02","star"],
+			["16:22","star"],
+			["16:37","star"],
+			["16:52","star"],
+			["17:07","normal"],
+			["17:17","normal"],
+			["17:27","normal"],
+			["17:37","normal"],
+			["17:47","normal"],
+			["17:57","normal"],
+			["18:07","normal"],
+			["18:17","normal"],
+			["18:27","normal"],
+			["18:37","normal"],
+			["18:47","normal"],
+			["18:57","normal"],
+			["19:12","star"],
+			["19:32","star"],
+			["19:42","star"],
+			["19:52","star"],
+			["20:07","star"],
+			["20:22","star"],
+			["20:37","star"],
+			["20:52","star"],
+			["21:07","star"],
+			["21:22","star"],
+			["21:37","star"],
+			["21:52","star"],
+			["22:07","star"],
+			["22:22","star"],
+			["22:37","star"],
+			["22:52","star"],
+			["23:07","star"]
+		];
+
+		const weekend_from_b = [
+			["6:30","star"],
+			["6:45","star"],
+			["6:55","star"],
+			["7:05","star"],
+			["7:15","star"],
+			["7:25","star"],
+			["7:35","star"],
+			["7:45","star"],
+			["7:55","star"],
+			["8:05","star"],
+			["8:15","star"],
+			["8:25","star"],
+			["8:35","star"],
+			["8:45","star"],
+			["8:55","star"],
+			["9:05","star"],
+			["9:15","star"],
+			["9:25","star"],
+			["9:35","star"],
+			["9:45","star"],
+			["10:00","star"],
+			["10:15","star"],
+			["10:30","star"],
+			["10:45","star"],
+			["11:00","star"],
+			["11:15","star"],
+			["11:30","star"],
+			["11:45","star"],
+			["12:00","star"],
+			["12:10","normal"],
+			["12:15","normal"],
+			["12:25","normal"],
+			["12:35","normal"],
+			["12:45","normal"],
+			["12:55","normal"],
+			["13:00","normal"],
+			["13:10","normal"],
+			["13:20","normal"],
+			["13:25","normal"],
+			["13:35","normal"],
+			["13:45","normal"],
+			["13:50","normal"],
+			["14:00","normal"],
+			["14:10","normal"],
+			["14:15","normal"],
+			["14:25","normal"],
+			["14:40","star"],
+			["14:55","star"],
+			["15:10","star"],
+			["15:25","star"],
+			["15:40","star"],
+			["15:50","star"],
+			["16:00","star"],
+			["16:10","star"],
+			["16:20","star"],
+			["16:30","star"],
+			["16:40","star"],
+			["16:50","star"],
+			["17:00","normal"],
+			["17:10","normal"],
+			["17:20","normal"],
+			["17:25","normal"],
+			["17:35","normal"],
+			["17:45","normal"],
+			["17:50","normal"],
+			["18:00","normal"],
+			["18:10","normal"],
+			["18:15","normal"],
+			["18:25","normal"],
+			["18:35","normal"],
+			["18:40","normal"],
+			["18:50","normal"],
+			["19:05","star"],
+			["19:15","star"],
+			["19:30","star"],
+			["19:40","star"],
+			["19:50","star"],
+			["20:05","star"],
+			["20:15","star"],
+			["20:20","star"],
+			["20:30","star"],
+			["20:45","star"],
+			["20:55","star"],
+			["21:10","star"],
+			["21:20","star"],
+			["21:35","star"],
+			["21:45","star"],
+			["21:55","star"],
+			["22:05","star"],
+			["22:15","star"],
+			["22:25","star"],
+			["22:35","star"],
+			["22:45","star"],
+			["23:05","star"],
+			["23:15","star"]
+		];
+
+		const weekend_back_b = [
+			["6:40","star"],
+			["6:55","star"],
+			["7:05","star"],
+			["7:15","star"],
+			["7:25","star"],
+			["7:35","star"],
+			["7:45","star"],
+			["7:55","star"],
+			["8:05","star"],
+			["8:15","star"],
+			["8:25","star"],
+			["8:35","star"],
+			["8:45","star"],
+			["8:55","star"],
+			["9:05","star"],
+			["9:15","star"],
+			["9:25","star"],
+			["9:35","star"],
+			["9:45","star"],
+			["9:55","star"],
+			["10:10","star"],
+			["10:25","star"],
+			["10:40","star"],
+			["10:55","star"],
+			["11:10","star"],
+			["11:25","star"],
+			["11:40","star"],
+			["11:55","star"],
+			["12:10","star"],
+			["12:20","normal"],
+			["12:25","normal"],
+			["12:35","normal"],
+			["12:45","normal"],
+			["12:55","normal"],
+			["13:05","normal"],
+			["13:10","normal"],
+			["13:20","normal"],
+			["13:30","normal"],
+			["13:35","normal"],
+			["13:45","normal"],
+			["13:55","normal"],
+			["14:00","normal"],
+			["14:10","normal"],
+			["14:20","normal"],
+			["14:25","normal"],
+			["14:35","normal"],
+			["14:50","star"],
+			["15:05","star"],
+			["15:20","star"],
+			["15:35","star"],
+			["15:50","star"],
+			["16:00","star"],
+			["16:10","star"],
+			["16:20","star"],
+			["16:30","star"],
+			["16:40","star"],
+			["16:50","star"],
+			["17:00","star"],
+			["17:10","normal"],
+			["17:20","normal"],
+			["17:30","normal"],
+			["17:35","normal"],
+			["17:45","normal"],
+			["17:55","normal"],
+			["18:00","normal"],
+			["18:10","normal"],
+			["18:20","normal"],
+			["18:25","normal"],
+			["18:35","normal"],
+			["18:45","normal"],
+			["18:50","normal"],
+			["19:00","normal"],
+			["19:15","star"],
+			["19:25","star"],
+			["19:40","star"],
+			["19:50","star"],
+			["20:00","star"],
+			["20:15","star"],
+			["20:25","star"],
+			["20:30","star"],
+			["20:40","star"],
+			["20:55","star"],
+			["21:05","star"],
+			["21:20","star"],
+			["21:30","star"],
+			["21:45","star"],
+			["21:55","star"],
+			["22:05","star"],
+			["22:15","star"],
+			["22:25","star"],
+			["22:35","star"],
+			["22:45","star"],
+			["22:55","star"],
+			["23:15","star"],
+			["23:30","star"]
+		];
+
+		const weekend_from_c = [
+			["6:30"],
+			["7:30"],
+			["8:30"],
+			["9:30"],
+			["10:30"],
+			["11:30"],
+			["14:30"],
+			["15:30"],
+			["16:30"],
+			["19:30"],
+			["20:30"],
+			["21:30"],
+			["22:30"]
+		];
+
+        // HK Public Holidays 2026 & 2027 reference (YYYY-MM-DD)
+        const hkHolidays = [
+            // 2026
+            "2026-01-01", "2026-02-17", "2026-02-18", "2026-02-19", "2026-04-03", "2026-04-04", "2026-04-06", "2026-04-07", "2026-05-01", "2026-05-25", "2026-06-19", "2026-07-01", "2026-09-26", "2026-10-01", "2026-10-19", "2026-12-25", "2026-12-26",
+            // 2027
+            "2027-01-01", "2027-02-06", "2027-02-08", "2027-02-09", "2027-03-26", "2027-03-27", "2027-03-29", "2027-04-05", "2027-05-01", "2027-05-13", "2027-06-09", "2027-07-01", "2027-09-16", "2027-10-01", "2027-10-08", "2027-12-25", "2027-12-27"
+        ];
+
+        let currentActiveBtn = null;
+
+        function checkIsHolidayOrWeekend(dateObj) {
+            const day = dateObj.getDay();
+            if (day === 0 || day === 6) return true; // Sunday or Saturday
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return hkHolidays.includes(`${y}-${m}-${d}`);
+        }
+
+        function isPublicHoliday(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return hkHolidays.includes(`${y}-${m}-${d}`);
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+            const optionsDate = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            
+            document.getElementById('date-display').innerText = now.toLocaleDateString('zh-HK', optionsDate);
+            document.getElementById('time-display').innerText = now.toLocaleTimeString('zh-HK', optionsTime);
+
+            const isPH = isPublicHoliday(now);
+            document.getElementById('holiday-display').innerText = isPH ? "今天香港是公眾假期" : "今天香港不是公眾假期";
+            
+            if(currentActiveBtn) showTable(currentActiveBtn);
+        }
+
+        function timeToMinutes(timeStr) {
+            const parts = timeStr.split(':');
+            return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        }
+
+        function getBusTimes(schedule, currentMins) {
+            let last = null, next1 = null, next2 = null;
+            for (let i = 0; i < schedule.length; i++) {
+                if (timeToMinutes(schedule[i][0]) >= currentMins) {
+                    last = (i > 0) ? schedule[i-1] : null;
+                    next1 = schedule[i];
+                    next2 = (i + 1 < schedule.length) ? schedule[i+1] : null;
+                    return [last, next1, next2];
+                }
+            }
+            // All buses have passed for the day
+            return [schedule[schedule.length - 1], null, null];
+        }
+
+        function formatBus(bus) {
+            if (!bus) return '<span class="empty-cell">-</span>';
+            const timeStr = bus[0];
+            const prop = bus[1] || 'normal';
+            if (prop === 'star') return '⭐ ' + timeStr;
+            if (prop === 'special') return '🚩 ' + timeStr;
+            return timeStr;
+        }
+
+        function showTable(direction) {
+            currentActiveBtn = direction;
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            const isWeekendOrHoliday = checkIsHolidayOrWeekend(now);
+
+            let schedA, schedB, schedC;
+
+            if (direction === 'from') {
+                schedA = isWeekendOrHoliday ? weekend_from_a : weekday_from_a;
+                schedB = isWeekendOrHoliday ? weekend_from_b : weekday_from_b;
+                schedC = isWeekendOrHoliday ? weekend_from_c : weekday_from_c;
+                
+                const resA = getBusTimes(schedA, currentMins);
+                const resB = getBusTimes(schedB, currentMins);
+                const resC = getBusTimes(schedC, currentMins);
+
+                const html = `
+                    <table>
+                        <tr>
+                            <th>A線 (天鑽出發)</th>
+                            <th>B線 (天鑽出發)</th>
+                            <th>C線 (天鑽出發)</th>
+                        </tr>
+                        <tr>
+                            <td>${formatBus(resA[0])}</td>
+                            <td>${formatBus(resB[0])}</td>
+                            <td>${formatBus(resC[0])}</td>
+                        </tr>
+                        <tr>
+                            <td>${formatBus(resA[1])}</td>
+                            <td>${formatBus(resB[1])}</td>
+                            <td>${formatBus(resC[1])}</td>
+                        </tr>
+                        <tr>
+                            <td>${formatBus(resA[2])}</td>
+                            <td>${formatBus(resB[2])}</td>
+                            <td>${formatBus(resC[2])}</td>
+                        </tr>
+                    </table>
+                `;
+                document.getElementById('table-container').innerHTML = html;
+            } else {
+                schedA = isWeekendOrHoliday ? weekend_back_a : weekday_back_a;
+                schedB = isWeekendOrHoliday ? weekend_back_b : weekday_back_b;
+                
+                const resA = getBusTimes(schedA, currentMins);
+                const resB = getBusTimes(schedB, currentMins);
+
+                const html = `
+                    <table>
+                        <tr>
+                            <th>A線 (南運路回程)</th>
+                            <th>B線 (南運路回程)</th>
+                        </tr>
+                        <tr>
+                            <td>${formatBus(resA[0])}</td>
+                            <td>${formatBus(resB[0])}</td>
+                        </tr>
+                        <tr>
+                            <td>${formatBus(resA[1])}</td>
+                            <td>${formatBus(resB[1])}</td>
+                        </tr>
+                        <tr>
+                            <td>${formatBus(resA[2])}</td>
+                            <td>${formatBus(resB[2])}</td>
+                        </tr>
+                    </table>
+                `;
+                document.getElementById('table-container').innerHTML = html;
+            }
+        }
+
+        setInterval(updateDateTime, 1000);
+        updateDateTime(); // init
+        showTable('from'); // default view
+    </script>
+</body>
+</html>
