@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>天鑽穿梭巴士</title>
+    <title>天鑽穿梭巴士即時班次</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -107,7 +107,7 @@
 </head>
 <body>
 
-    <h1>天鑽穿梭巴士</h1>
+    <h1>天鑽穿梭巴士即時班次</h1>
     <div id="datetime-info">
         <div id="date-display">加載中...</div>
         <div id="time-display" class="time-text"></div>
@@ -1009,9 +1009,9 @@
                 const html = `
                     <table>
                         <tr>
-                            <th>A線 (天鑽出發)</th>
-                            <th>B線 (天鑽出發)</th>
-                            <th>C線 (天鑽出發)</th>
+                            <th>A線 (天鑽)</th>
+                            <th>B線 (天鑽)</th>
+                            <th>C線 (天鑽)</th>
                         </tr>
                         <tr>
                             <td>${formatBus(resA[0])}</td>
@@ -1041,8 +1041,8 @@
                 const html = `
                     <table>
                         <tr>
-                            <th>A線 (南運路回程)</th>
-                            <th>B線 (南運路回程)</th>
+                            <th>A線 (南運路)</th>
+                            <th>B線 (南運路)</th>
                         </tr>
                         <tr>
                             <td>${formatBus(resA[0])}</td>
